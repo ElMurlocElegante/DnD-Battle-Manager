@@ -1,25 +1,31 @@
 import time
 import pandas as pd
 import random
-
+#Impirimir texto de forma progresiva
 def slow_print(text,speed):
     s=' '
     for char in text:
         print(char,end='',flush=True)
         time.sleep(speed)
     return s
+
+#Tirada de Dados
 def die_gen(die,quant,mod):
     result = 0
     for tirada in range(quant):
         result += random.randint(1,die)
         result += mod
     return result
+
+#CSV --> Tabla
 def tablenator(item):
     item = item.strip('\n')
     item = item.split(';') 
     return item
+
+#Crear PC
 def inic_call_char(inic_pool,df_c_data):
-    PC = {'Character':['Ariel','JF','Gallo','Iago','Logan'],'Iniciativa':[],'Vida':[]}
+    PC = {'Character':['Ariel','JF','Gallo','Iago','Logan'],'Iniciativa':[],'Vida':[],'Succes':[],'Failure':[]}
     for i in range(5):
         while True:
             try:
@@ -30,13 +36,17 @@ def inic_call_char(inic_pool,df_c_data):
         
         PC['Iniciativa'].append(inic)
         PC['Vida'].append(df_c_data['HP'][i])
+        PC['Succes'].append(0)
+        PC['Failure'].append(0)
     c_data = pd.DataFrame(PC)
     inic_pool = pd.concat([inic_pool,c_data],ignore_index=True)
     inic_pool = inic_pool.sort_values('Iniciativa',ascending = False)
     inic_pool = inic_pool.reset_index(drop=True)    
     return inic_pool
+
+#Crear NPC
 def inic_call_enemy(inic_pool):  
-    inic_enemigos ={'Character':[],'Iniciativa':[],'Vida':[]}
+    inic_enemigos ={'Character':[],'Iniciativa':[],'Vida':[],'Succes':[],'Failure':[]}
     while True:
         try:
             enemy_inic = int(input(slow_print('Ingrese el modificador de Dex del enemigo:\n',0.01)))
@@ -52,11 +62,16 @@ def inic_call_enemy(inic_pool):
     inic_enemigos['Character'].append(enemy_name)
     inic_enemigos['Iniciativa'].append(enemy_inic)
     inic_enemigos['Vida'].append(enemy_hp)
+    inic_enemigos['Succes'].append(None)
+    inic_enemigos['Failure'].append(None)
     c_data = pd.DataFrame(inic_enemigos)
     inic_pool = pd.concat([inic_pool,c_data],ignore_index=True)
     inic_pool = inic_pool.sort_values('Iniciativa',ascending = False)
-    inic_pool = inic_pool.reset_index(drop=True)      
+    inic_pool = inic_pool.reset_index(drop=True)
+    slow_print('Base de datos actualizada correctamente, enemigo añadido.',0.01)      
     return inic_pool
+
+#Eliminar PC/NPC
 def inic_call_delete(inic_pool):
     print(inic_pool)
     while True:
@@ -69,6 +84,8 @@ def inic_call_delete(inic_pool):
     inic_pool = inic_pool.sort_values('Iniciativa',ascending = False)
     inic_pool = inic_pool.reset_index(drop=True)    
     return inic_pool
+
+#Cambiar Vida
 def hp_modifier(inic_pool):
     print(inic_pool)
     while True:
@@ -84,12 +101,13 @@ def hp_modifier(inic_pool):
     inic_pool['Vida'][selec]=(int(inic_pool['Vida'][selec]) - hp_mod)
     inic_pool = inic_pool.sort_values('Iniciativa',ascending = False)
     inic_pool = inic_pool.reset_index(drop=True)    
-    slow_print('Valores Actualizados.',0.02)
+    slow_print('Valores Actualizados.\n',0.02)
     print(inic_pool)
     return inic_pool
+
+#CSV-->main
 def read_pc_data():
-    pc_data = open('pc_stats.csv','r+')
-    death_saving = {'Character':[],'Failure':[],'Succes':[]}
+    pc_data = open('resources\\pc_stats.csv','r+')
     pc_stats = pc_data.readlines()
     pc_data.close()
     pc_stats = list(map(tablenator,pc_stats))
@@ -99,22 +117,14 @@ def read_pc_data():
         for i in range(9):
             key = list(c_data_stats.keys())[i]
             c_data_stats[key].append(item[i])
-        death_saving['Character'].append(item[0])
-        death_saving['Failure'].append(0)
-        death_saving['Succes'].append(0)
     df_c_data = pd.DataFrame(c_data_stats)
-    death_saving = pd.DataFrame(death_saving)
-    return df_c_data, death_saving
-def death_saving_sort(death_saving,inic_pool):
-    death_saving = death_saving.merge(inic_pool[['Character','Iniciativa']], on='Character')
-    death_saving = death_saving.sort_values(by='Iniciativa', ascending=False)
-    death_saving = death_saving.drop('Iniciativa', axis=1)
-    death_saving = death_saving.reset_index(drop=True)
-    return death_saving
-def death_saving_throw(death_saving, inic_pool, turno_name):
+    return df_c_data
+
+#Tiros de salvacion
+def death_saving_throw(inic_pool, turno_name):
     while True:
         try:
-            result = int(input(slow_print(f'\n{death_saving.loc[death_saving["Character"] == turno_name, "Character"].iloc[0]} está abatido. Ingrese el resultado del tiro de salvación del jugador', 0.01)))
+            result = int(input(slow_print(f'\n{inic_pool.loc[inic_pool["Character"] == turno_name, "Character"].iloc[0]} está abatido. Ingrese el resultado del tiro de salvación del jugador', 0.01)))
             if result < 1 or result > 20:
                 continue
             else:
@@ -122,22 +132,37 @@ def death_saving_throw(death_saving, inic_pool, turno_name):
         except ValueError:
             print('ERROR, Ingrese un número')
     if result == 1:
-        death_saving.loc[death_saving['Character'] == turno_name, 'Failure'] += 2
+        inic_pool.loc[inic_pool['Character'] == turno_name, 'Failure'] += 2
     elif result in range(2, 10):
-        death_saving.loc[death_saving['Character'] == turno_name, 'Failure'] += 1
+        inic_pool.loc[inic_pool['Character'] == turno_name, 'Failure'] += 1
     elif result in range(10, 19):
-        death_saving.loc[death_saving['Character'] == turno_name, 'Succes'] += 1
+        inic_pool.loc[inic_pool['Character'] == turno_name, 'Succes'] += 1
     elif result == 20:
-        death_saving.loc[death_saving['Character'] == turno_name, 'Succes'] = 3
-        death_saving.loc[death_saving['Character'] == turno_name, 'Failure'] = 0
+        inic_pool.loc[inic_pool['Character'] == turno_name, 'Succes'] = 3
+        inic_pool.loc[inic_pool['Character'] == turno_name, 'Failure'] = 0
 
-    if death_saving.loc[death_saving['Character'] == turno_name, 'Succes'].iloc[0] == 3:
+    if inic_pool.loc[inic_pool['Character'] == turno_name, 'Succes'].iloc[0] == 3:
         slow_print('\nEl Personaje logró todos los tiros de salvación.\n', 0.01)
-        death_saving.loc[death_saving['Character'] == turno_name, 'Succes'] = 0
-        death_saving.loc[death_saving['Character'] == turno_name, 'Failure'] = 0
+        inic_pool.loc[inic_pool['Character'] == turno_name, 'Succes'] = 0
+        inic_pool.loc[inic_pool['Character'] == turno_name, 'Failure'] = 0
         inic_pool.loc[inic_pool['Character'] == turno_name, 'Vida'] = '1'
-    elif death_saving.loc[death_saving['Character'] == turno_name, 'Failure'].iloc[0] >= 3:
+    elif inic_pool.loc[inic_pool['Character'] == turno_name, 'Failure'].iloc[0] >= 3:
         slow_print('\nEl Personaje muere.\n', 0.01)
     else:
-        slow_print(f'\nEl Personaje tiene {death_saving.loc[death_saving["Character"] == turno_name, "Succes"].iloc[0]} tiradas logradas y {death_saving.loc[death_saving["Character"] == turno_name, "Failure"].iloc[0]} tiradas falladas\n', 0.01)
-    return death_saving, inic_pool
+        slow_print(f'\nEl Personaje tiene {inic_pool.loc[inic_pool["Character"] == turno_name, "Succes"].iloc[0]} tiradas logradas y {inic_pool.loc[inic_pool["Character"] == turno_name, "Failure"].iloc[0]} tiradas falladas\n', 0.01)
+    return inic_pool
+
+#csv --> Data
+def csv_read():
+    file = open('resources\\pool.csv','r')
+    data = file.readlines()
+    file.close
+    data = list(map(tablenator,data))
+    pool = {'Character':[],'Iniciativa':[],'Vida':[],'Succes':[],'Failure':[]}
+    data.pop(0)
+    for lista in data:
+        for item in range(len(lista)):
+            key = list(pool.keys())[item]
+            pool[key].append(lista[item])
+    df_pool = pd.DataFrame(pool)
+    return df_pool
