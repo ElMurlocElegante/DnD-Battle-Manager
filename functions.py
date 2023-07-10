@@ -98,7 +98,7 @@ def hp_modifier(inic_pool):
         if selec < 0 or selec>(len(inic_pool)):
             print('ERROR, Ingrese un valor válido')
             return inic_pool
-    inic_pool['Vida'][selec]=(int(inic_pool['Vida'][selec]) - hp_mod)
+    inic_pool.iloc[selec,2]=(int(inic_pool.iloc[selec,2] - hp_mod))
     inic_pool = inic_pool.sort_values('Iniciativa',ascending = False)
     inic_pool = inic_pool.reset_index(drop=True)    
     slow_print('Valores Actualizados.\n',0.02)
