@@ -115,6 +115,8 @@ def call_inic_enemy(pad,pad_b,pad_n,pad_t,df,col1,col2):
             selec -= 1
         elif key == 'KEY_DOWN':
             selec += 1
+        elif key == 'q' or key == 'Q':
+            return df
         elif key == '\n':
             if selec == 0:
                 dex = get_input_data(pad,pad_n,x,selec,col1,col2)
@@ -153,6 +155,7 @@ def call_inic_enemy(pad,pad_b,pad_n,pad_t,df,col1,col2):
         for i in range(len(text_list)):
             pad.addstr(i,int(x*0.1-1),' '+text_list[i]+' ')
         pad.addstr(len(text_list),int(x/2)-2,' OK ')
+        pad.addstr(y-1,int(x-len('Q para volver al Menú')-2),'Q para volver al Menú')
         try:
             pad.addstr(selec,int(x*0.1-1),'»'+' '*len(text_list[selec])+'«')
             pad.addstr(selec,int(x*0.1),text_list[selec],curses.A_STANDOUT)
@@ -180,6 +183,8 @@ def call_inic_enemy(pad,pad_b,pad_n,pad_t,df,col1,col2):
             selec -= 1
         elif key == 'KEY_DOWN':
             selec += 1
+        elif key == 'q' or key == 'Q':
+            return df
         elif key == '\n':
             try:
                 enemy_names[selec].set_name(get_input_data_txt(pad,pad_t,x,selec,col1,col2))
@@ -193,12 +198,14 @@ def call_inic_enemy(pad,pad_b,pad_n,pad_t,df,col1,col2):
         for i in range(max_selec):
             pad.addstr(i,int(x*0.1-1),' '+str(enemy_list[i])+' ')
         pad.addstr(max_selec,int(x/2-2),' OK ')
+        pad.addstr(y-1,int(x-len('Q para volver al Menú')-2),'Q para volver al Menú')
         try:
             pad.addstr(selec,int(x*0.1)-1,'»'+str(enemy_list[selec])+'«')
             pad.addstr(selec,int(x*0.1),str(enemy_list[selec]),curses.A_STANDOUT)
         except:
             pad.addstr(selec,int(x/2-2),'»'+' '*2+'«')
             pad.addstr(selec,int(x/2-1),'OK',curses.A_STANDOUT)
+
         pad.refresh()
         key = pad.getkey()
     for i in range(enemys):
@@ -212,12 +219,15 @@ def call_inic_enemy(pad,pad_b,pad_n,pad_t,df,col1,col2):
     return df
 
 def call_inic_del(pad,pad_b,df):
-
-    df = df.drop([multi_page_menu(pad,pad_b,df,'Eliminar Enemigo')])
-    df = df.sort_values('Iniciativa',ascending = False).reset_index(drop=True)
-    pad.clear()
-    pad.refresh()
-    return df
+    selec = multi_page_menu(pad,pad_b,df,'Eliminar Enemigo')
+    if selec == 'q':
+        return df
+    else:
+        df = df.drop([])
+        df = df.sort_values('Iniciativa',ascending = False).reset_index(drop=True)
+        pad.clear()
+        pad.refresh()
+        return df
 
 def del_char(df,pc,df_d):
     pc_index = df['Character'].tolist().index(pc)
@@ -230,29 +240,33 @@ def hp_modifier(pad,pad_b,pad_n,df,col1,col2):
     y,x = pad.getmaxyx()
     y = int(y/2)
     selec = multi_page_menu(pad,pad_b,df,'Modificar HP')
-    pad.clear()
-    txt = f'Modificar HP de {df.iloc[selec,0]}'
-    txt2 = f'Vida actual: {df.iloc[selec,2]}'
-    pad.addstr(0,int((x-len(txt))/2),txt)
-    pad.addstr(1,int((x-len(txt2))/2),txt2)
-    box_inator(pad_b,'Ingrese un Valor','num')
-    pad_b.refresh()
-    pad.refresh()
-    hp_mod = get_input_data(pad,pad_n,x,y,col1,col2)
-    df.iloc[selec,2]=(int(df.iloc[selec,2]) - hp_mod)
-    df = df.sort_values('Iniciativa',ascending = False)
-    df = df.reset_index(drop=True)
-    pad.addstr(1,int((x-len(txt2))/2),txt2)
-    time.sleep(0.5)
-    pad.refresh()
-    pad.clear()
-    return df
+    if selec == 'q':
+        return df
+    else:
+        pad.clear()
+        txt = f'Modificar HP de {df.iloc[selec,0]}'
+        txt2 = f'Vida actual: {df.iloc[selec,2]}'
+        pad.addstr(0,int((x-len(txt))/2),txt)
+        pad.addstr(1,int((x-len(txt2))/2),txt2)
+        box_inator(pad_b,'Ingrese un Valor','num')
+        pad_b.refresh()
+        pad.refresh()
+        hp_mod = get_input_data(pad,pad_n,x,y,col1,col2)
+        df.iloc[selec,2]=(int(df.iloc[selec,2]) - hp_mod)
+        df = df.sort_values('Iniciativa',ascending = False)
+        df = df.reset_index(drop=True)
+        pad.addstr(1,int((x-len(txt2))/2),txt2)
+        time.sleep(0.5)
+        pad.refresh()
+        pad.clear()
+        return df
 
 def death_saving(pad,pad_b,pad_n,df,pc,col1,col2):
     box_inator(pad_b,'Tiros de Salvación','num')
     y,x = pad.getmaxyx()
     txt = f'Tiene {df.loc[df["Character"] == pc,"Failure"].iloc[0]} Tiros Fallados y {df.loc[df["Character"] == pc,"Succes"].iloc[0]} Tiros Logrados'
-    txt2 = f'{pc} Logró todos los tiros de salvación, y ahora se encuentra estabilizado'
+    txt2 = f'{pc} Logró todos los tiros de salvación'
+    txt3 = 'Y se encuentra estabilizado'
     pad_b.refresh()
     pad.addstr(0,int((x-len(f'{pc} Está abatido'))/2),f'{pc} Está abatido')
     pad.refresh()
@@ -276,10 +290,12 @@ def death_saving(pad,pad_b,pad_n,df,pc,col1,col2):
         if df.loc[df['Character'] == pc,'Succes'].iloc[0] == 3:
             df.loc[df['Character'] == pc,'Failure'] = 0
             
-            pad.addstr(3,int((x-len(txt2))/2))
+            pad.addstr(3,int((x-len(txt2))/2),txt2)
+            pad.addstr(4,int((x-len(txt3))/2),txt3)
     else: 
-        pad.addstr(3,int((x-len(txt2))/2))
+        pad.addstr(3,int((x-len(txt2))/2),txt2)
+        pad.addstr(4,int((x-len(txt3))/2),txt3)
     pad.addstr(1,int((x-len(txt))/2),txt)
     pad.refresh()
-    time.sleep(0.5)
+    time.sleep(1)
     return df

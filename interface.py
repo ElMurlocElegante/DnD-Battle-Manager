@@ -14,7 +14,7 @@ left_scr_up.clear()
 text_list = ['Agregar un NPC','Eliminar un NPC','Modificar HP de un NPC','Iniciar Combate']
 selec = 0
 key = ''
-box_inator(left_scr_up_in,'Seleccione una Opción','num')
+box_inator(left_scr_up_in,'Seleccione una Opción','none')
 left_scr_up_in.refresh()
 while True:
 
@@ -26,17 +26,17 @@ while True:
         if selec == 0:
             inic_pool = call_inic_enemy(left_scr_up,left_scr_up_in,num_win,text_win,inic_pool,g_b,r_b)
             draw_dataframe(right_scr,inic_pool)
-            box_inator(left_scr_up_in,'Seleccione una Opción','num')
+            box_inator(left_scr_up_in,'Seleccione una Opción','none')
             left_scr_up_in.refresh()
         elif selec == 1:
             inic_pool = call_inic_del(left_scr_up,left_scr_up_in,inic_pool)
             draw_dataframe(right_scr,inic_pool)
-            box_inator(left_scr_up_in,'Seleccione una Opción','num')
+            box_inator(left_scr_up_in,'Seleccione una Opción','none')
             left_scr_up_in.refresh()
         elif selec == 2:
             inic_pool = hp_modifier(left_scr_up,left_scr_up_in,num_win,inic_pool,g_b,r_b)
             draw_dataframe(right_scr,inic_pool)
-            box_inator(left_scr_up_in,'Seleccione una Opción','num')
+            box_inator(left_scr_up_in,'Seleccione una Opción','none')
             left_scr_up_in.refresh()
         elif selec == 3:
             break

@@ -71,6 +71,8 @@ def multi_page_menu(pad,pad_b,df,text):
         elif key == 'KEY_RIGHT':
             page +=1
             pad.clear()
+        elif key == 'q' or key == 'Q':
+            return 'q'
         elif key == '\n':
             key = ''
             pad.addstr(int((y-1)/2),int(x/2-7),'Estas Seguro ?')
@@ -123,6 +125,7 @@ def multi_page_menu(pad,pad_b,df,text):
                 pad.addstr(i,int(x*0.1-1),' '+str(ch_list[c])+' ')
             except:
                 pad.addstr(i,int(x*0.1-1),' '*14)
+        pad.addstr(y-1,int(x-len('Q para volver al Menú')-2),'Q para volver al Menú')
         try:
             pad.addstr(selec,int(x*0.1)-1,'»'+' '*len(ch_list[selec+page*(y-2)])+'«')
             pad.addstr(selec,int(x*0.1),ch_list[selec+page*(y-2)],curses.A_STANDOUT)
