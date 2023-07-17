@@ -7,6 +7,8 @@ import curses.textpad
 class Character:
     def __init__(self,name):
         self.name = name
+    def set_name(self,value):
+        self.name = value
     def get_name(self):
         return self.name
     def set_inic(self,value):
@@ -56,13 +58,13 @@ def call_inic_char(pad,pad_b,pad_n,pc_data,col1,col2):
                     break
                 except:
                     for i in range(6):
-                        pad.addstr(y,int((x-24)/2),'ERROR, Ingrese un Número')
+                        pad.addstr(y-1,int((x-30)/2),'ERROR, Ingrese todos los Datos')
                         pad.refresh()
                         time.sleep(0.1)
-                        pad.addstr(y,int((x-24)/2),'ERROR, Ingrese un Número',col2)
+                        pad.addstr(y-1,int((x-30)/2),'ERROR, Ingrese todos los Datos',col2)
                         pad.refresh()
                         time.sleep(0.1)
-                    pad.addstr(y,int((x-24)/2),' '*24)
+                    pad.addstr(y-1,int((x-30)/2),' '*30)
                     pad.refresh()
                     time.sleep(0.5)
             else:
@@ -134,10 +136,10 @@ def call_inic_enemy(pad,pad_b,pad_n,pad_t,df,col1,col2):
                     break
                 else:
                     for i in range(6):
-                        pad.addstr(y,int((x-30)/2),'ERROR, ingrese todos los datos')
+                        pad.addstr(y-1,int((x-30)/2),'ERROR, ingrese todos los datos')
                         pad.refresh()
                         time.sleep(0.1)
-                        pad.addstr(y,int((x-30)/2),'ERROR, ingrese todos los datos',col2)
+                        pad.addstr(y-1,int((x-30)/2),'ERROR, ingrese todos los datos',col2)
                         pad.refresh()
                         time.sleep(0.1)
                     pad.addstr(y,int((x-30)/2),' '*30)
@@ -150,7 +152,7 @@ def call_inic_enemy(pad,pad_b,pad_n,pad_t,df,col1,col2):
             selec = 0
         for i in range(len(text_list)):
             pad.addstr(i,int(x*0.1-1),' '+text_list[i]+' ')
-        pad.addstr(len(text_list),int(x/2-2),' OK ')
+        pad.addstr(len(text_list),int(x/2)-2,' OK ')
         try:
             pad.addstr(selec,int(x*0.1-1),'»'+' '*len(text_list[selec])+'«')
             pad.addstr(selec,int(x*0.1),text_list[selec],curses.A_STANDOUT)
@@ -163,53 +165,58 @@ def call_inic_enemy(pad,pad_b,pad_n,pad_t,df,col1,col2):
     pad_b.refresh()
     key = ' '
     selec = 0
+    enemy_list = []
     enemy_names = []
+    
+    for i in range(enemys):
+        enemy_list.append(f'Enemigo N°{i+1}')
+    for npc in enemy_list:
+        npc = Character(npc)
+        enemy_names.append(npc)
+    max_selec = len(enemy_list)
     while True:
+        
         if key == 'KEY_UP':
             selec -= 1
         elif key == 'KEY_DOWN':
             selec += 1
         elif key == '\n':
-            nombre = get_input_data_txt(pad,pad_t,x,selec,col1,col2)
-            enemy_names.append(nombre)
-        for i in range(enemys):
-            pad.addstr(i,int(x*0.1),f'Enemigo N°{i+1}')
+            try:
+                enemy_names[selec].set_name(get_input_data_txt(pad,pad_t,x,selec,col1,col2))
+                selec +=1
+            except:
+                break
+        if selec <0:
+            selec = max_selec
+        elif selec >max_selec:
+            selec = 0
+        for i in range(max_selec):
+            pad.addstr(i,int(x*0.1-1),' '+str(enemy_list[i])+' ')
+        pad.addstr(max_selec,int(x/2-2),' OK ')
+        try:
+            pad.addstr(selec,int(x*0.1)-1,'»'+str(enemy_list[selec])+'«')
+            pad.addstr(selec,int(x*0.1),str(enemy_list[selec]),curses.A_STANDOUT)
+        except:
+            pad.addstr(selec,int(x/2-2),'»'+' '*2+'«')
+            pad.addstr(selec,int(x/2-1),'OK',curses.A_STANDOUT)
+        pad.refresh()
+        key = pad.getkey()
     for i in range(enemys):
-        nombre = get_input_data_txt(pad,pad_t,x,i,col1,col2)
-        enemy_hp = die_gen(dice_face,dice_quant,con)
-        enemy_inic = random.randint(1,20) + dex
-        new_row = pd.DataFrame({'Character': [nombre], 'Iniciativa': [enemy_inic], 'HP':[enemy_hp]})
+        enemy_names[i].set_hp(die_gen(dice_face,dice_quant,con))
+        enemy_names[i].set_inic(random.randint(1,20) + dex) 
+        new_row = pd.DataFrame({'Character': [str(enemy_names[i].get_name())], 'Iniciativa': [int(enemy_names[i].get_inic())], 'HP':[int(enemy_names[i].get_hp())]})
         df = pd.concat([df, new_row], ignore_index=True)
     df = df.sort_values(by='Iniciativa',ascending=False).reset_index(drop=True)
     pad.clear()
 
     return df
 
-def call_inic_del(pad,df,alto,ancho):
-    pad.clear()
-    slow_print(pad,f'{"-"*15}Remover Enemigos{"-"*15}',0.01)
-    temp_win = curses.newwin(2, 50, (alto + 4), (ancho+3))
-    while True:
-        try:
-            temp_win.clear()
-            rectangle(pad, 5, 3, 7, 16)
-            pad.refresh()
-            slow_print(temp_win,'Ingrese el Índice del personaje que desea eliminar',0.01)
-            min_win = curses.newwin(1, 3, (alto+8), (ancho+10))
-            box = Textbox(min_win)
-            box.edit()
-            del_char = int(box.gather())
-            if del_char < 0 or del_char > (len(df['Character'])-1):
-                slow_print(temp_win,'ERROR, Ingrese un número',0.01)
-                continue   
-            break
-        except ValueError:
-            slow_print(temp_win,'ERROR, Ingrese un número',0.01)
-            temp_win.getch()
-    df = df.drop([del_char])
+def call_inic_del(pad,pad_b,df):
+
+    df = df.drop([multi_page_menu(pad,pad_b,df,'Eliminar Enemigo')])
     df = df.sort_values('Iniciativa',ascending = False).reset_index(drop=True)
-    temp_win.clear()
-    min_win.clear()
+    pad.clear()
+    pad.refresh()
     return df
 
 def del_char(df,pc,df_d):
@@ -219,80 +226,60 @@ def del_char(df,pc,df_d):
     new_row = pd.DataFrame({'Character': [pc]})
     df_d = pd.concat([df_d,new_row],ignore_index=True)
     return df,df_d
-def hp_modifier(pad,df,alto,ancho):
+def hp_modifier(pad,pad_b,pad_n,df,col1,col2):
+    y,x = pad.getmaxyx()
+    y = int(y/2)
+    selec = multi_page_menu(pad,pad_b,df,'Modificar HP')
     pad.clear()
-    slow_print(pad,f'{"-"*15}Modificar Vida{"-"*15}',0.01)
-    temp_win = curses.newwin(3, 50, (alto+3), (ancho+3))
-    rectangle(pad, 5, 3, 7, 16)
-    temp_win.clear()
-    slow_print(temp_win,'Ingrese el índice del personaje a alterar:',0.01)
-    min_win = curses.newwin(1, 4, (alto+8), (ancho+10))
+    txt = f'Modificar HP de {df.iloc[selec,0]}'
+    txt2 = f'Vida actual: {df.iloc[selec,2]}'
+    pad.addstr(0,int((x-len(txt))/2),txt)
+    pad.addstr(1,int((x-len(txt2))/2),txt2)
+    box_inator(pad_b,'Ingrese un Valor','num')
+    pad_b.refresh()
     pad.refresh()
-    box = Textbox(min_win)
-    while True:
-        box.edit()
-        try:
-            selec = int(box.gather())
-            if selec < 0 or selec>(len(df['Character'])):
-                slow_print(temp_win,'ERROR, Ingrese un valor válido',0.01)
-                temp_win.clear()
-                continue
-            break
-        except ValueError:
-            slow_print(temp_win,'\nERROR, Ingrese un número',0.01)
-            temp_win.getch()
-
-    while True:
-        min_win.clear( )
-        temp_win.clear()
-        slow_print(temp_win,'Ingrese la vida a substraer o agregar\n(con un menos adelante)',0.01)
-        box.edit()
-        try:
-
-            hp_mod = int(box.gather())
-            break
-        except ValueError:
-            slow_print(temp_win,'\nERROR, Ingrese un número',0.01)
-            temp_win.getch()
-    temp_win.clear()
-    min_win.clear()
+    hp_mod = get_input_data(pad,pad_n,x,y,col1,col2)
     df.iloc[selec,2]=(int(df.iloc[selec,2]) - hp_mod)
     df = df.sort_values('Iniciativa',ascending = False)
-    df = df.reset_index(drop=True)    
-    slow_print(temp_win,'Valores Actualizados.',0.02)
+    df = df.reset_index(drop=True)
+    pad.addstr(1,int((x-len(txt2))/2),txt2)
+    time.sleep(0.5)
+    pad.refresh()
+    pad.clear()
     return df
 
-def death_saving(pad,pad2,df,pc,alto,ancho):
-    slow_print(pad,f'\n{pc} Está abatido.\nHaga un tiro de salvación:',0.01)
-    while True:
-
-        rectangle(pad2, 7, 3, 9, 16)
-        min_win = curses.newwin(1, 3, (alto+10), (ancho+10))
-        pad2.refresh()
-        box = Textbox(min_win)
-        try:
-            box.edit()
-            result = int(box.gather())
-            if result < 1 or result > 20:
-                continue
-            break
-        except:
-            slow_print(pad,'ERROR, Ingrese un número',0.01)
-            pad.getch()
-    if result == 1:
-        df.loc[df['Character'] == pc,'Failure'] += 2
-    elif result in range(2,10):
-        df.loc[df['Character'] == pc,'Failure'] += 1
-    elif result in range(10,20):
-        df.loc[df['Character'] == pc,'Succes'] += 1
-    elif result == 20:
-        df.loc[df['Character'] == pc,'Succes'] = 3
-    
-    if df.loc[df['Character'] == pc,'Failure'].iloc[0] >= 3:
-        df.loc[df['Character'] == pc,'Failure'] = 3
-    if df.loc[df['Character'] == pc,'Succes'].iloc[0] == 3:
-        df.loc[df['Character'] == pc,'Failure'] = 0
-        df.loc[df['Character'] == pc,'Succes'] = 0
-        df.loc[df['Character'] == pc,'HP'] = 1
-        slow_print(pad, f'\n{pc} Logró todos los tiros de salvación',0.02)
+def death_saving(pad,pad_b,pad_n,df,pc,col1,col2):
+    box_inator(pad_b,'Tiros de Salvación','num')
+    y,x = pad.getmaxyx()
+    txt = f'Tiene {df.loc[df["Character"] == pc,"Failure"].iloc[0]} Tiros Fallados y {df.loc[df["Character"] == pc,"Succes"].iloc[0]} Tiros Logrados'
+    txt2 = f'{pc} Logró todos los tiros de salvación, y ahora se encuentra estabilizado'
+    pad_b.refresh()
+    pad.addstr(0,int((x-len(f'{pc} Está abatido'))/2),f'{pc} Está abatido')
+    pad.refresh()
+    if df.loc[df['Character'] == pc,'Succes'].iloc[0] != 3:
+        pad.addstr(1,int((x-len(txt))/2),txt)
+        pad.refresh()
+        result = get_input_data(pad,pad_n,int(x/2),int(y/2),col1,col2)
+        if result == 1:
+            df.loc[df['Character'] == pc,'Failure'] += 2
+        elif result in range(2,10):
+            df.loc[df['Character'] == pc,'Failure'] += 1
+        elif result in range(10,20):
+            df.loc[df['Character'] == pc,'Succes'] += 1
+        elif result == 20:
+            df.loc[df['Character'] == pc,'Failure'] = 0
+            df.loc[df['Character'] == pc,'Succes'] = 0
+            df.loc[df['Character'] == pc,'HP'] = 1
+        
+        if df.loc[df['Character'] == pc,'Failure'].iloc[0] >= 3:
+            df.loc[df['Character'] == pc,'Failure'] = 3
+        if df.loc[df['Character'] == pc,'Succes'].iloc[0] == 3:
+            df.loc[df['Character'] == pc,'Failure'] = 0
+            
+            pad.addstr(3,int((x-len(txt2))/2))
+    else: 
+        pad.addstr(3,int((x-len(txt2))/2))
+    pad.addstr(1,int((x-len(txt))/2),txt)
+    pad.refresh()
+    time.sleep(0.5)
     return df

@@ -29,8 +29,8 @@ left_scr_dw_in = curses.newwin((mit_alto-3),(mit_ancho-2),(marg_sup+mit_alto+2),
 left_scr_up = curses.newwin((mit_alto-9),(mit_ancho-4),(marg_sup+5),(marg_lat+2))
 left_scr_dw = curses.newwin((mit_alto-9),(mit_ancho-4),(marg_sup+mit_alto+5),(marg_lat+2))
 right_scr = curses.newwin((alto-marg_sup*2-3),(mit_ancho-2),(marg_sup+2),(mit_ancho + marg_lat + 2))
-text_win = curses.newwin(1, 12, (marg_sup+14), int(marg_lat+mit_ancho*0.5-6))
-num_win = curses.newwin(1, 4, (marg_sup+14), int(marg_lat+mit_ancho*0.5-2))
+text_win = curses.newwin(1, 12, (marg_sup+mit_alto-3), int(marg_lat+mit_ancho*0.5-6))
+num_win = curses.newwin(1, 4, (marg_sup+mit_alto-3), int(marg_lat+mit_ancho*0.5-2))
 #Flavor
 left_scr_up.keypad(True)
 left_scr_dw_out.box()
