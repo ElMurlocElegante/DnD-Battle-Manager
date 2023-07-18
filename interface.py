@@ -2,13 +2,14 @@ from curses.textpad import rectangle,Textbox
 from main_functions import *
 from suport_functions import *
 from screen_config import *
+from battle_log import *
 
 pc_data = read_pc_data()
-death_npc = pd.DataFrame({'Character':[]})
+death_npc = []
+damage_data = pd.DataFrame({'Character':[],'Damage':[]})
 
-inic_pool = call_inic_char(left_scr_up,left_scr_up_in,num_win,pc_data,g_b,r_b)
+inic_pool,damage_data = call_inic_char(left_scr_up,left_scr_up_in,num_win,pc_data,damage_data,g_b,r_b)
 
-action = ''
 draw_dataframe(right_scr,inic_pool)
 left_scr_up.clear()
 text_list = ['Agregar un NPC','Eliminar un NPC','Modificar HP de un NPC','Iniciar Combate']
@@ -24,7 +25,7 @@ while True:
         selec += 1
     elif key == '\n':
         if selec == 0:
-            inic_pool = call_inic_enemy(left_scr_up,left_scr_up_in,num_win,text_win,inic_pool,g_b,r_b)
+            inic_pool,damage_data = call_inic_enemy(left_scr_up,left_scr_up_in,num_win,text_win,inic_pool,damage_data,g_b,r_b)
             draw_dataframe(right_scr,inic_pool)
             box_inator(left_scr_up_in,'Seleccione una Opción','none')
             left_scr_up_in.refresh()
@@ -34,7 +35,7 @@ while True:
             box_inator(left_scr_up_in,'Seleccione una Opción','none')
             left_scr_up_in.refresh()
         elif selec == 2:
-            inic_pool = hp_modifier(left_scr_up,left_scr_up_in,num_win,inic_pool,g_b,r_b)
+            inic_pool,damage_data = hp_modifier(left_scr_up,left_scr_up_in,num_win,inic_pool,damage_data,'system',g_b,r_b)
             draw_dataframe(right_scr,inic_pool)
             box_inator(left_scr_up_in,'Seleccione una Opción','none')
             left_scr_up_in.refresh()
@@ -57,7 +58,10 @@ while True:
 ronda = 1
 while True:
     inic_pool_temp = inic_pool.copy()
+    turn_log(ronda)
     for pc in inic_pool_temp['Character']:
+        damage_log(left_scr_dw)
+        damage_top(left_scr_dw,damage_data)
         while True:
             left_scr_up.clear()
             box_inator_duo(left_scr_up_in,f'Turno de {pc}',f'Ronda N°{ronda}')
@@ -73,10 +77,10 @@ while True:
                     else:
                         inic_pool = death_saving(left_scr_up,left_scr_up_in,num_win,inic_pool,pc,g_b,r_b)
                 if pc not in ['Ariel','Gallo','Iago','JF','Logan']:
-                    if pc not in death_npc['Character'].values:
+                    if pc not in death_npc:
                         inic_pool, death_npc = del_char(inic_pool,pc,death_npc)
                         left_scr_dw.clear()
-                        left_scr_dw.addstr(0,0,f'{death_npc["Character"].tolist()}')
+                        left_scr_dw.addstr(0,0,f'{death_npc}')
                         left_scr_dw.refresh()
                 time.sleep(1)    
                 break
@@ -96,12 +100,14 @@ while True:
                         selec += 1
                     elif key == '\n':
                         if selec == 0:
-                            inic_pool = hp_modifier(left_scr_up,left_scr_up_in,num_win,inic_pool,g_b,r_b)
+                            inic_pool,damage_data = hp_modifier(left_scr_up,left_scr_up_in,num_win,inic_pool,damage_data,pc,g_b,r_b)
                             draw_dataframe(right_scr,inic_pool)
                             box_inator_duo(left_scr_up_in,f'Turno de {pc}',f'Ronda N°{ronda}')
+                            damage_log(left_scr_dw)
+                            damage_top(left_scr_dw,damage_data)
                             left_scr_up_in.refresh()
                         elif selec == 1:
-                            inic_pool = call_inic_enemy(left_scr_up,left_scr_up_in,num_win,text_win,inic_pool,g_b,r_b)
+                            inic_pool,damage_data = call_inic_enemy(left_scr_up,left_scr_up_in,num_win,text_win,inic_pool,damage_data,g_b,r_b)
                             draw_dataframe(right_scr,inic_pool)
                             box_inator_duo(left_scr_up_in,f'Turno de {pc}',f'Ronda N°{ronda}')
                             left_scr_up_in.refresh()

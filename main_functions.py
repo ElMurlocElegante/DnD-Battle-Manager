@@ -20,7 +20,10 @@ class Character:
     def get_hp(self):
         return self.hp
 
-def call_inic_char(pad,pad_b,pad_n,pc_data,col1,col2):
+def call_inic_char(pad,pad_b,pad_n,pc_data,df_dmg,col1,col2):
+    file = open("resources\\battle_log.txt",mode='w')
+    file.write('')
+    file.close()
     df = pd.DataFrame(columns=['Character', 'Iniciativa', 'HP', 'Succes', 'Failure'])
     txt = 'Ingrese la iniciativa de:'
     y,x = pad.getmaxyx()
@@ -50,8 +53,10 @@ def call_inic_char(pad,pad_b,pad_n,pc_data,col1,col2):
                 try:
                     for pc in range(len(pc_data['Character'])):
                         new_row = pd.DataFrame({'Character': [pc_data["Character"][pc]], 'Iniciativa': [int(pc_list[pc].get_inic())]})
-                        if new_row['Character'][0] not in df['Character'].tolist():
+                        new_row2 = pd.DataFrame({'Character':[pc_data["Character"][pc]],'Damage':[0]})
+                        if new_row['Character'][0] not in df['Character'].tolist() and new_row2['Character'][0] not in df_dmg['Character'].tolist():
                             df = pd.concat([df, new_row], ignore_index=True)
+                            df_dmg = pd.concat([df_dmg, new_row2], ignore_index=True)
                             df.iloc[pc, 2] = pc_data.iloc[pc, 1]
                             df.iloc[pc,3] = 0
                             df.iloc[pc,4]= 0
@@ -96,9 +101,9 @@ def call_inic_char(pad,pad_b,pad_n,pc_data,col1,col2):
         time.sleep(0.15)
     time.sleep(1)
     df = df.sort_values(by='Iniciativa',ascending=False).reset_index(drop=True)
-    return df
+    return df, df_dmg
 
-def call_inic_enemy(pad,pad_b,pad_n,pad_t,df,col1,col2):
+def call_inic_enemy(pad,pad_b,pad_n,pad_t,df,df_dmg,col1,col2):
     pad.clear()
     y,x=pad.getmaxyx()
     if x % 2 != 0:
@@ -116,7 +121,7 @@ def call_inic_enemy(pad,pad_b,pad_n,pad_t,df,col1,col2):
         elif key == 'KEY_DOWN':
             selec += 1
         elif key == 'q' or key == 'Q':
-            return df
+            return df,df_dmg
         elif key == '\n':
             if selec == 0:
                 dex = get_input_data(pad,pad_n,x,selec,col1,col2)
@@ -184,7 +189,7 @@ def call_inic_enemy(pad,pad_b,pad_n,pad_t,df,col1,col2):
         elif key == 'KEY_DOWN':
             selec += 1
         elif key == 'q' or key == 'Q':
-            return df
+            return df,df_dmg
         elif key == '\n':
             try:
                 enemy_names[selec].set_name(get_input_data_txt(pad,pad_t,x,selec,col1,col2))
@@ -212,18 +217,20 @@ def call_inic_enemy(pad,pad_b,pad_n,pad_t,df,col1,col2):
         enemy_names[i].set_hp(die_gen(dice_face,dice_quant,con))
         enemy_names[i].set_inic(random.randint(1,20) + dex) 
         new_row = pd.DataFrame({'Character': [str(enemy_names[i].get_name())], 'Iniciativa': [int(enemy_names[i].get_inic())], 'HP':[int(enemy_names[i].get_hp())]})
+        new_row2 = pd.DataFrame({'Character':[str(enemy_names[i].get_name())],'Damage':[0]})
         df = pd.concat([df, new_row], ignore_index=True)
+        df_dmg = pd.concat([df_dmg, new_row2],ignore_index=True)
     df = df.sort_values(by='Iniciativa',ascending=False).reset_index(drop=True)
     pad.clear()
 
-    return df
+    return df,df_dmg
 
 def call_inic_del(pad,pad_b,df):
     selec = multi_page_menu(pad,pad_b,df,'Eliminar Enemigo')
     if selec == 'q':
         return df
     else:
-        df = df.drop([])
+        df = df.drop([selec])
         df = df.sort_values('Iniciativa',ascending = False).reset_index(drop=True)
         pad.clear()
         pad.refresh()
@@ -233,15 +240,14 @@ def del_char(df,pc,df_d):
     pc_index = df['Character'].tolist().index(pc)
     df = df.drop([pc_index])
     df = df.sort_values('Iniciativa',ascending = False).reset_index(drop=True)
-    new_row = pd.DataFrame({'Character': [pc]})
-    df_d = pd.concat([df_d,new_row],ignore_index=True)
+    df_d.append(pc)
     return df,df_d
-def hp_modifier(pad,pad_b,pad_n,df,col1,col2):
+def hp_modifier(pad,pad_b,pad_n,df,df_dmg,pc,col1,col2):
     y,x = pad.getmaxyx()
     y = int(y/2)
     selec = multi_page_menu(pad,pad_b,df,'Modificar HP')
     if selec == 'q':
-        return df
+        return df,df_dmg
     else:
         pad.clear()
         txt = f'Modificar HP de {df.iloc[selec,0]}'
@@ -259,7 +265,19 @@ def hp_modifier(pad,pad_b,pad_n,df,col1,col2):
         time.sleep(0.5)
         pad.refresh()
         pad.clear()
-        return df
+        if hp_mod > 0:
+            df_dmg.loc[df_dmg['Character'] == pc,'Damage'] += hp_mod
+            df_dmg = df_dmg.sort_values(by='Damage',ascending=False).reset_index(drop=True)
+
+        file = open('resources\\battle_log.txt',mode='a')
+        if hp_mod>0:
+            file.write(f'{pc} Infligió {hp_mod} de daño a {df["Character"][selec]}\n')
+        elif hp_mod<0:
+            file.write(f'{pc} Curó {hp_mod} de vida a {df["Character"][selec]}\n')
+        else:
+            file.write(f'{pc} Falló su ataque a {df["Character"][selec]}\n')
+        file.close()
+        return df, df_dmg
 
 def death_saving(pad,pad_b,pad_n,df,pc,col1,col2):
     box_inator(pad_b,'Tiros de Salvación','num')
