@@ -1,7 +1,7 @@
 
 from suport_functions import *
+from menus import *
 import curses
-from curses.textpad import rectangle,Textbox
 import curses.textpad
 
 class Character:
@@ -242,6 +242,31 @@ def del_char(df,pc,df_d):
     df = df.sort_values('Iniciativa',ascending = False).reset_index(drop=True)
     df_d.append(pc)
     return df,df_d
+def inic_modifier(pad,pad_b,pad_n,df,col1,col2):
+    y,x = pad.getmaxyx()
+    y = int(y/2)
+    selec = multi_page_menu(pad,pad_b,df,'Modificar Iniciativa') 
+    if selec == 'q':
+        return df
+    else:
+        pad.clear()
+        txt = f'Modificar Iniciativa de {df.iloc[selec,0]}'
+        txt2 = f'Iniciativa actual: {df.iloc[selec,1]}'
+        pad.addstr(0,int((x-len(txt))/2),txt)
+        pad.addstr(1,int((x-len(txt2))/2),txt2)
+        box_inator(pad_b,'Ingrese un Valor','num')
+        pad_b.refresh()
+        pad.refresh()
+        inic_mod = get_input_data(pad,pad_n,x,y,col1,col2)
+        df.iloc[selec,1]= inic_mod
+        df = df.sort_values('Iniciativa',ascending = False)
+        df = df.reset_index(drop=True)
+        pad.addstr(1,int((x-len(txt2))/2),txt2)
+        time.sleep(0.5)
+        pad.refresh()
+        pad.clear()
+        
+        return df
 def hp_modifier(pad,pad_b,pad_n,df,df_dmg,pc,col1,col2):
     y,x = pad.getmaxyx()
     y = int(y/2)
@@ -271,11 +296,51 @@ def hp_modifier(pad,pad_b,pad_n,df,df_dmg,pc,col1,col2):
 
         file = open('resources\\battle_log.txt',mode='a')
         if hp_mod>0:
-            file.write(f'{pc} Infligió {hp_mod} de daño a {df["Character"][selec]}\n')
+            file.write(f'[{time.asctime()}]{pc} Infligió {hp_mod} de daño a {df["Character"][selec]}\n')
         elif hp_mod<0:
-            file.write(f'{pc} Curó {hp_mod} de vida a {df["Character"][selec]}\n')
+            file.write(f'[{time.asctime()}]{pc} Curó {-hp_mod} de vida a {df["Character"][selec]}\n')
         else:
-            file.write(f'{pc} Falló su ataque a {df["Character"][selec]}\n')
+            file.write(f'[{time.asctime()}]{pc} Falló su ataque a {df["Character"][selec]}\n')
+        file.close()
+        return df, df_dmg
+
+def reaction_mod(pad,pad_b,pad_n,df,df_dmg,col1,col2):
+    y,x = pad.getmaxyx()
+    y = int(y/2)
+    pc = multi_page_menu(pad,pad_b,df,'Reacción PC')
+    if pc == 'q':
+        return df,df_dmg
+    selec = multi_page_menu(pad,pad_b,df,'Modificar HP')
+    if selec == 'q':
+        return df,df_dmg
+    else:
+        pad.clear()
+        txt = f'Modificar HP de {df.iloc[selec,0]}'
+        txt2 = f'Vida actual: {df.iloc[selec,2]}'
+        pad.addstr(0,int((x-len(txt))/2),txt)
+        pad.addstr(1,int((x-len(txt2))/2),txt2)
+        box_inator(pad_b,'Ingrese un Valor','num')
+        pad_b.refresh()
+        pad.refresh()
+        hp_mod = get_input_data(pad,pad_n,x,y,col1,col2)
+        df.iloc[selec,2]=(int(df.iloc[selec,2]) - hp_mod)
+        df = df.sort_values('Iniciativa',ascending = False)
+        df = df.reset_index(drop=True)
+        pad.addstr(1,int((x-len(txt2))/2),txt2)
+        time.sleep(0.5)
+        pad.refresh()
+        pad.clear()
+        if hp_mod > 0:
+            df_dmg.loc[df_dmg['Character'] == pc,'Damage'] += hp_mod
+            df_dmg = df_dmg.sort_values(by='Damage',ascending=False).reset_index(drop=True)
+
+        file = open('resources\\battle_log.txt',mode='a')
+        if hp_mod>0:
+            file.write(f'[{time.asctime()}]{df["Character"][pc]} Infligió {hp_mod} de daño a {df["Character"][selec]}\n')
+        elif hp_mod<0:
+            file.write(f'[{time.asctime()}]{df["Character"][pc]} Curó {-hp_mod} de vida a {df["Character"][selec]}\n')
+        else:
+            file.write(f'[{time.asctime()}]{df["Character"][pc]} Falló su ataque a {df["Character"][selec]}\n')
         file.close()
         return df, df_dmg
 
@@ -315,5 +380,5 @@ def death_saving(pad,pad_b,pad_n,df,pc,col1,col2):
         pad.addstr(4,int((x-len(txt3))/2),txt3)
     pad.addstr(1,int((x-len(txt))/2),txt)
     pad.refresh()
-    time.sleep(1)
+    time.sleep(0.5)
     return df

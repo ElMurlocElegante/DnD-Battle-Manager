@@ -1,9 +1,14 @@
-
+from data_managment import eliminar_contenido_entre_corchetes
+from time import asctime
 def damage_log(pad):
     pad.clear()
     y,x = pad.getmaxyx()
     file = open('resources\\battle_log.txt',mode='r')
-    log = file.readlines()
+    data = file.readlines()
+    log = []
+    for text in data:
+        text = eliminar_contenido_entre_corchetes(text)
+        log.append(text)
     if len(log) < y:
         for i in range(len(log)):
             pad.addstr(i,1,log[len(log)-i-1])
@@ -23,5 +28,5 @@ def damage_top(pad,df_dmg):
     pad.refresh()
 def turn_log(ronda):
     file = open('resources\\battle_log.txt',mode='a')
-    file.write(f'Ronda N°{ronda}\n')
+    file.write(f'[{asctime()}]Ronda N°{ronda}\n')
     file.close()

@@ -33,6 +33,8 @@ text_win = curses.newwin(1, 12, (marg_sup+mit_alto-3), int(marg_lat+mit_ancho*0.
 num_win = curses.newwin(1, 4, (marg_sup+mit_alto-3), int(marg_lat+mit_ancho*0.5-2))
 #Flavor
 left_scr_up.keypad(True)
+left_scr_dw.keypad(True)
+right_scr.keypad(True)
 left_scr_dw_out.box()
 left_scr_up_out.box()
 right_scr_out.box()
