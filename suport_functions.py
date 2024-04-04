@@ -29,19 +29,6 @@ def tablenator(item):
     item = item.strip('\n')
     item = item.split(';') 
     return item
-def read_pc_data():
-    pc_data = open('resources\\pc_stats.csv','r+')
-    pc_stats = pc_data.readlines()
-    pc_data.close()
-    pc_stats = list(map(tablenator,pc_stats))
-    c_data_stats={'Character':[],'HP':[],'AC':[],'Str':[],'Dex':[],'Con':[],'Int':[],'Wis':[],'Chr':[]}
-    pc_stats.pop(0)
-    for item in pc_stats:
-        for i in range(9):
-            key = list(c_data_stats.keys())[i]
-            c_data_stats[key].append(item[i])
-    df_c_data = pd.DataFrame(c_data_stats)
-    return df_c_data
 
 def box_inator(pad,text,type):
     pad.clear()

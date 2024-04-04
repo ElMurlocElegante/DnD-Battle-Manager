@@ -19,12 +19,17 @@ class Character:
         self.hp = value
     def get_hp(self):
         return self.hp
+    def set_ac(self,value):
+        self.ac = value
+    def get_ac(self):
+        return self.ac
 
-def call_inic_char(pad,pad_b,pad_n,pc_data,df_dmg,col1,col2):
+def call_inic_char(pad,pad_b,pad_n,df_dmg,col1,col2):
     file = open("resources\\battle_log.txt",mode='w')
     file.write('')
     file.close()
-    df = pd.DataFrame(columns=['Character', 'Iniciativa', 'HP', 'Succes', 'Failure'])
+    pc_data = pd.read_csv('resources\\pc_stats.csv',sep=';')
+    df = pd.DataFrame(columns=['Character', 'Iniciativa', 'Max HP','HP','AC', 'S', 'F'])
     txt = 'Ingrese la iniciativa de:'
     y,x = pad.getmaxyx()
 
@@ -58,8 +63,10 @@ def call_inic_char(pad,pad_b,pad_n,pc_data,df_dmg,col1,col2):
                             df = pd.concat([df, new_row], ignore_index=True)
                             df_dmg = pd.concat([df_dmg, new_row2], ignore_index=True)
                             df.iloc[pc, 2] = pc_data.iloc[pc, 1]
-                            df.iloc[pc,3] = 0
-                            df.iloc[pc,4]= 0
+                            df.iloc[pc, 3] = pc_data.iloc[pc, 2]
+                            df.iloc[pc, 4] = pc_data.iloc[pc, 3]
+                            df.iloc[pc,5] = 0
+                            df.iloc[pc,6]= 0
                     break
                 except:
                     for i in range(6):
@@ -110,10 +117,10 @@ def call_inic_enemy(pad,pad_b,pad_n,pad_t,df,df_dmg,col1,col2):
         x -=1
     box_inator(pad_b,'Añadir Enemigo','num')
     pad_b.refresh()
-    text_list = ['Dex Mod','Dice Quant','Dice Faces','Con Mod','Cantidad de Enemigos',]
+    text_list = ['Dex Mod','Dice Quant','Dice Faces','Con Mod','AC','Cantidad de Enemigos',]
     key = ' '
     selec = 0
-    dex,dice_quant,dice_face,con,enemys = None,None,None,None,None
+    dex,dice_quant,dice_face,con,ac,enemies = None,None,None,None,None,None
     while True:
 
         if key == 'KEY_UP':
@@ -136,10 +143,13 @@ def call_inic_enemy(pad,pad_b,pad_n,pad_t,df,df_dmg,col1,col2):
                 con = get_input_data(pad,pad_n,x,selec,col1,col2)
                 selec += 1
             elif selec == 4:
-                enemys = get_input_data(pad,pad_n,x,selec,col1,col2)
+                ac = get_input_data(pad,pad_n,x,selec,col1,col2)
                 selec += 1
             elif selec == 5:
-                if dex != None and dice_quant != None and dice_face != None and con != None and enemys != None:
+                enemies = get_input_data(pad,pad_n,x,selec,col1,col2)
+                selec += 1
+            elif selec == 6:
+                if dex != None and dice_quant != None and dice_face != None and con != None and enemies != None and ac != None:
                     break
                 else:
                     for i in range(6):
@@ -154,8 +164,8 @@ def call_inic_enemy(pad,pad_b,pad_n,pad_t,df,df_dmg,col1,col2):
                     time.sleep(0.5)
                     
         if selec < 0:
-            selec = 5
-        elif selec >5:
+            selec = 6
+        elif selec >6:
             selec = 0
         for i in range(len(text_list)):
             pad.addstr(i,int(x*0.1-1),' '+text_list[i]+' ')
@@ -176,7 +186,7 @@ def call_inic_enemy(pad,pad_b,pad_n,pad_t,df,df_dmg,col1,col2):
     enemy_list = []
     enemy_names = []
     
-    for i in range(enemys):
+    for i in range(enemies):
         enemy_list.append(f'Enemigo N°{i+1}')
     for npc in enemy_list:
         npc = Character(npc)
@@ -213,10 +223,10 @@ def call_inic_enemy(pad,pad_b,pad_n,pad_t,df,df_dmg,col1,col2):
 
         pad.refresh()
         key = pad.getkey()
-    for i in range(enemys):
+    for i in range(enemies):
         enemy_names[i].set_hp(die_gen(dice_face,dice_quant,con))
         enemy_names[i].set_inic(random.randint(1,20) + dex) 
-        new_row = pd.DataFrame({'Character': [str(enemy_names[i].get_name())], 'Iniciativa': [int(enemy_names[i].get_inic())], 'HP':[int(enemy_names[i].get_hp())]})
+        new_row = pd.DataFrame({'Character': [str(enemy_names[i].get_name())], 'Iniciativa': [int(enemy_names[i].get_inic())], 'Max HP':[int(enemy_names[i].get_hp())],'HP':[int(enemy_names[i].get_hp())],'AC':[int(ac)]})
         new_row2 = pd.DataFrame({'Character':[str(enemy_names[i].get_name())],'Damage':[0]})
         df = pd.concat([df, new_row], ignore_index=True)
         df_dmg = pd.concat([df_dmg, new_row2],ignore_index=True)
@@ -276,14 +286,14 @@ def hp_modifier(pad,pad_b,pad_n,df,df_dmg,pc,col1,col2):
     else:
         pad.clear()
         txt = f'Modificar HP de {df.iloc[selec,0]}'
-        txt2 = f'Vida actual: {df.iloc[selec,2]}'
+        txt2 = f'Vida actual: {df.iloc[selec,3]}/{df.iloc[selec,2]}'
         pad.addstr(0,int((x-len(txt))/2),txt)
         pad.addstr(1,int((x-len(txt2))/2),txt2)
         box_inator(pad_b,'Ingrese un Valor','num')
         pad_b.refresh()
         pad.refresh()
         hp_mod = get_input_data(pad,pad_n,x,y,col1,col2)
-        df.iloc[selec,2]=(int(df.iloc[selec,2]) - hp_mod)
+        df.iloc[selec,3]=(int(df.iloc[selec,3]) - hp_mod)
         df = df.sort_values('Iniciativa',ascending = False)
         df = df.reset_index(drop=True)
         pad.addstr(1,int((x-len(txt2))/2),txt2)
@@ -316,14 +326,14 @@ def reaction_mod(pad,pad_b,pad_n,df,df_dmg,col1,col2):
     else:
         pad.clear()
         txt = f'Modificar HP de {df.iloc[selec,0]}'
-        txt2 = f'Vida actual: {df.iloc[selec,2]}'
+        txt2 = f'Vida actual: {df.iloc[selec,3]}/{df.iloc[selec,2]}'
         pad.addstr(0,int((x-len(txt))/2),txt)
         pad.addstr(1,int((x-len(txt2))/2),txt2)
         box_inator(pad_b,'Ingrese un Valor','num')
         pad_b.refresh()
         pad.refresh()
         hp_mod = get_input_data(pad,pad_n,x,y,col1,col2)
-        df.iloc[selec,2]=(int(df.iloc[selec,2]) - hp_mod)
+        df.iloc[selec,3]=(int(df.iloc[selec,3]) - hp_mod)
         df = df.sort_values('Iniciativa',ascending = False)
         df = df.reset_index(drop=True)
         pad.addstr(1,int((x-len(txt2))/2),txt2)
@@ -343,35 +353,34 @@ def reaction_mod(pad,pad_b,pad_n,df,df_dmg,col1,col2):
             file.write(f'[{time.asctime()}]{df["Character"][pc]} Falló su ataque a {df["Character"][selec]}\n')
         file.close()
         return df, df_dmg
-
 def death_saving(pad,pad_b,pad_n,df,pc,col1,col2):
     box_inator(pad_b,'Tiros de Salvación','num')
     y,x = pad.getmaxyx()
-    txt = f'Tiene {df.loc[df["Character"] == pc,"Failure"].iloc[0]} Tiros Fallados y {df.loc[df["Character"] == pc,"Succes"].iloc[0]} Tiros Logrados'
+    txt = f'Tiene {df.loc[df["Character"] == pc,"F"].iloc[0]} Tiros Fallados y {df.loc[df["Character"] == pc,"S"].iloc[0]} Tiros Logrados'
     txt2 = f'{pc} Logró todos los tiros de salvación'
     txt3 = 'Y se encuentra estabilizado'
     pad_b.refresh()
     pad.addstr(0,int((x-len(f'{pc} Está abatido'))/2),f'{pc} Está abatido')
     pad.refresh()
-    if df.loc[df['Character'] == pc,'Succes'].iloc[0] != 3:
+    if df.loc[df['Character'] == pc,'S'].iloc[0] != 3:
         pad.addstr(1,int((x-len(txt))/2),txt)
         pad.refresh()
         result = get_input_data(pad,pad_n,int(x/2),int(y/2),col1,col2)
         if result == 1:
-            df.loc[df['Character'] == pc,'Failure'] += 2
+            df.loc[df['Character'] == pc,'F'] += 2
         elif result in range(2,10):
-            df.loc[df['Character'] == pc,'Failure'] += 1
+            df.loc[df['Character'] == pc,'F'] += 1
         elif result in range(10,20):
-            df.loc[df['Character'] == pc,'Succes'] += 1
+            df.loc[df['Character'] == pc,'S'] += 1
         elif result == 20:
-            df.loc[df['Character'] == pc,'Failure'] = 0
-            df.loc[df['Character'] == pc,'Succes'] = 0
+            df.loc[df['Character'] == pc,'F'] = 0
+            df.loc[df['Character'] == pc,'S'] = 0
             df.loc[df['Character'] == pc,'HP'] = 1
         
-        if df.loc[df['Character'] == pc,'Failure'].iloc[0] >= 3:
-            df.loc[df['Character'] == pc,'Failure'] = 3
-        if df.loc[df['Character'] == pc,'Succes'].iloc[0] == 3:
-            df.loc[df['Character'] == pc,'Failure'] = 0
+        if df.loc[df['Character'] == pc,'F'].iloc[0] >= 3:
+            df.loc[df['Character'] == pc,'F'] = 3
+        if df.loc[df['Character'] == pc,'S'].iloc[0] == 3:
+            df.loc[df['Character'] == pc,'F'] = 0
             
             pad.addstr(3,int((x-len(txt2))/2),txt2)
             pad.addstr(4,int((x-len(txt3))/2),txt3)
